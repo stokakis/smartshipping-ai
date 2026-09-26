@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>smartshippingai</name>
+    <displayName><![CDATA[SmartShipping AI - Volumetric Carrier & Cart Matrix]]></displayName>
+    <version><![CDATA[1.2.0]]></version>
+    <description><![CDATA[Dynamic volumetric class carrier engine with Cart Leader absorption, combination attributes, multi-zone maritime pricing, and Gemini AI classification.]]></description>
+    <author><![CDATA[SmartShipping Logistics Lab]]></author>
+    <tab><![CDATA[shipping_logistics]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>0</need_instance>
+    <limited_countries></limited_countries>
+</module>

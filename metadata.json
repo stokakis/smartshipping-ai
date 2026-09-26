@@ -1,0 +1,6 @@
+{
+  "name": "SmartShipping AI - PrestaShop 1.7 Logistics Module",
+  "description": "PrestaShop 1.7 custom shipping module with Volumetric Class absorption matrix, logistics rate engine, and AOV booster.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

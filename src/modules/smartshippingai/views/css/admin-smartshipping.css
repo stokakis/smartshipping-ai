@@ -1,0 +1,48 @@
+/**
+ * SmartShipping AI - PrestaShop Back-Office Admin Controller Styles
+ * Volumetric Class Color-Coded Audit Badges & Row Indicators
+ */
+
+.smartshipping-class-badge-container {
+    transition: all 0.2s ease-in-out;
+    cursor: default;
+}
+
+.smartshipping-class-badge-container:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Class-specific row accent borders */
+tr.smartshipping-row-class-1 {
+    border-left: 4px solid #10b981 !important;
+}
+
+tr.smartshipping-row-class-2 {
+    border-left: 4px solid #0284c7 !important;
+}
+
+tr.smartshipping-row-class-3 {
+    border-left: 4px solid #f59e0b !important;
+}
+
+tr.smartshipping-row-class-4 {
+    border-left: 4px solid #a855f7 !important;
+}
+
+/* Class Audit Quick Tabs */
+.smartshipping-audit-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: background 0.15s ease;
+}
+
+.smartshipping-audit-tab.active {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
