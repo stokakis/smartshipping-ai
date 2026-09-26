@@ -39,7 +39,8 @@ import {
   Globe,
   Link2,
   Key,
-  ArrowDownToLine
+  ArrowDownToLine,
+  FolderDown
 } from 'lucide-react';
 
 export interface CourierVoucher {
@@ -510,6 +511,8 @@ export const AdminControllerView: React.FC = () => {
   const [testCalcClassId, setTestCalcClassId] = useState<number>(4);
   const [isExportZipModalOpen, setIsExportZipModalOpen] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
+  const [isExportingFullApp, setIsExportingFullApp] = useState(false);
+  const [exportPackageType, setExportPackageType] = useState<'module' | 'full_app'>('full_app');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending'>('all');
   const [classFilter, setClassFilter] = useState<number | 'all'>('all');
@@ -1260,6 +1263,33 @@ export const AdminControllerView: React.FC = () => {
     }
   };
 
+  // Download entire full-stack project ZIP package
+  const handleDownloadFullAppZip = async () => {
+    setIsExportingFullApp(true);
+    try {
+      const response = await fetch('/api/app/export-full-project');
+      if (!response.ok) {
+        throw new Error('Failed to generate full project ZIP from server');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'smartshipping-ai-full-webapp.zip';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      showToast('Complete Full-Stack Web App ZIP downloaded successfully!', 'success');
+      setIsExportZipModalOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      showToast('Full App export failed: ' + (err?.message || 'Error'), 'info');
+    } finally {
+      setIsExportingFullApp(false);
+    }
+  };
+
   // Save Zone Matrix changes
   const handleSaveZones = async () => {
     setIsSavingZones(true);
@@ -1883,12 +1913,27 @@ export const AdminControllerView: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setIsExportZipModalOpen(true)}
+                onClick={() => {
+                  setExportPackageType('full_app');
+                  setIsExportZipModalOpen(true);
+                }}
                 className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-                title="Export complete PrestaShop installable module ZIP package"
+                title="Download entire Full-Stack Web App codebase with Server, Dockerfile, and Railway configs"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export Module ZIP</span>
+                <FolderDown className="w-3.5 h-3.5" />
+                <span>Download Full App (ZIP)</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setExportPackageType('module');
+                  setIsExportZipModalOpen(true);
+                }}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                title="Export complete PrestaShop installable carrier module ZIP package"
+              >
+                <Download className="w-3.5 h-3.5 text-indigo-400" />
+                <span>PrestaShop Module ZIP</span>
               </button>
 
               <button
@@ -4132,25 +4177,35 @@ export const AdminControllerView: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Export PrestaShop ZIP Installable Package */}
+      {/* Modal: Export ZIP Packages (Full App vs PrestaShop Module) */}
       {isExportZipModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden my-8">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 bg-slate-950 border-b border-slate-800">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                  <Download className="w-5 h-5" />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  exportPackageType === 'full_app' 
+                    ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
+                    : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400'
+                }`}>
+                  {exportPackageType === 'full_app' ? <FolderDown className="w-5 h-5" /> : <Download className="w-5 h-5" />}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center space-x-2">
-                    <span>Export PrestaShop Module Package</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      v1.2.0 ZIP
+                    <span>{exportPackageType === 'full_app' ? 'Download Complete Full-Stack Web App' : 'Export PrestaShop Carrier Module'}</span>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                      exportPackageType === 'full_app'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                        : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                    }`}>
+                      {exportPackageType === 'full_app' ? 'FULL REPO ZIP' : 'MODULE v1.0.0 ZIP'}
                     </span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Self-contained installable ZIP archive ready for PrestaShop 1.7 / 8.x Module Manager.
+                    {exportPackageType === 'full_app'
+                      ? 'Self-contained repository ready for GitHub, Railway.com, Docker, and local development.'
+                      : 'Self-contained installable ZIP archive ready for PrestaShop 1.7 / 8.x Module Manager.'}
                   </p>
                 </div>
               </div>
@@ -4163,90 +4218,164 @@ export const AdminControllerView: React.FC = () => {
               </button>
             </div>
 
+            {/* Package Type Switcher Tabs */}
+            <div className="grid grid-cols-2 p-3 gap-2 bg-slate-950/60 border-b border-slate-800">
+              <button
+                type="button"
+                onClick={() => setExportPackageType('full_app')}
+                className={`flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  exportPackageType === 'full_app'
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                <FolderDown className="w-4 h-4" />
+                <span>Full Web Application (Entire App)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setExportPackageType('module')}
+                className={`flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  exportPackageType === 'module'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                <Download className="w-4 h-4" />
+                <span>PrestaShop Module (.zip only)</span>
+              </button>
+            </div>
+
             {/* Content */}
             <div className="p-6 space-y-4">
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-300">Package Archive Name:</span>
-                  <span className="font-mono text-xs font-bold text-emerald-400">smartshippingai-v1.0.0.zip</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span>Target Platform:</span>
-                  <span>PrestaShop 1.7.0.0 - 8.2.x</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span>Installation Mode:</span>
-                  <span>Module Manager &rarr; Upload a module (.zip)</span>
-                </div>
-              </div>
+              {exportPackageType === 'full_app' ? (
+                <>
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300">Package Archive Name:</span>
+                      <span className="font-mono text-xs font-bold text-emerald-400">smartshipping-ai-full-webapp.zip</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>Deployment Targets:</span>
+                      <span className="text-slate-200 font-medium">Railway.com • GitHub • Docker • Node.js</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>Included Stack:</span>
+                      <span>Express Server + React 19 Frontend + PrestaShop Module + Guides</span>
+                    </div>
+                  </div>
 
-              {/* Manifest List */}
-              <div className="space-y-2">
-                <span className="text-[11px] font-semibold uppercase text-slate-400 block tracking-wider">
-                  Included Package Manifest (14 Files Verified):
-                </span>
-                <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/80 p-3 text-[11px] font-mono text-slate-300 divide-y divide-slate-900">
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-emerald-400">smartshippingai/smartshippingai.php</span>
-                    <span className="text-slate-500 text-[10px]">Carrier hooks & engine</span>
+                  {/* Manifest List */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-semibold uppercase text-slate-400 block tracking-wider">
+                      Included Full-Stack Files:
+                    </span>
+                    <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/80 p-3 text-[11px] font-mono text-slate-300 divide-y divide-slate-900">
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-emerald-400">server.ts</span>
+                        <span className="text-slate-500 text-[10px]">Express REST API, PrestaShop bridge, Gemini multimodal</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-teal-400">railway.json & nixpacks.toml</span>
+                        <span className="text-slate-500 text-[10px]">Zero-config automated Railway.com deploy</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-sky-400">Dockerfile</span>
+                        <span className="text-slate-500 text-[10px]">Production Node 20 container image</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-sky-400">package.json & .nvmrc</span>
+                        <span className="text-slate-500 text-[10px]">Node &gt;= 20.0.0 dependencies & scripts</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-indigo-400">src/App.tsx & src/components/</span>
+                        <span className="text-slate-500 text-[10px]">Complete React 19 UI, Simulator, Admin Controller, Tests</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-purple-400">src/modules/smartshippingai/</span>
+                        <span className="text-slate-500 text-[10px]">Full PrestaShop PHP module sources</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-amber-400">RAILWAY_DEPLOYMENT_GUIDE_GR.md</span>
+                        <span className="text-slate-500 text-[10px]">Step-by-step Greek deployment manual</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-amber-400">SMARTSHIPPING_AI_GUIDE_GR.md</span>
+                        <span className="text-slate-500 text-[10px]">Complete Greek technical & user manual</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-emerald-400">smartshippingai/config.xml</span>
-                    <span className="text-slate-500 text-[10px]">Module descriptor</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-sky-400">smartshippingai/sql/install.sql</span>
-                    <span className="text-slate-500 text-[10px]">Database schema creation</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-sky-400">smartshippingai/sql/uninstall.sql</span>
-                    <span className="text-slate-500 text-[10px]">Database cleanup</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-purple-400">smartshippingai/controllers/admin/AdminSmartShippingAIController.php</span>
-                    <span className="text-slate-500 text-[10px]">HelperList & AJAX</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-amber-400">smartshippingai/views/css/admin-smartshipping.css</span>
-                    <span className="text-slate-500 text-[10px]">Volumetric audit badges</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-amber-400">smartshippingai/views/js/admin-smartshipping.js</span>
-                    <span className="text-slate-500 text-[10px]">AJAX moderation scripts</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-indigo-400">smartshippingai/views/templates/hook/shopping_cart_footer.tpl</span>
-                    <span className="text-slate-500 text-[10px]">Front-office cart widget</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-indigo-400">smartshippingai/views/templates/admin/configure.tpl</span>
-                    <span className="text-slate-500 text-[10px]">Back-office setup panel</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-slate-400">smartshippingai/tests/Unit/SmartShippingShippingCostTest.php</span>
-                    <span className="text-slate-500 text-[10px]">PHPUnit absorption suite</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-slate-400">smartshippingai/tests/Unit/ClassOneAbsorptionEdgeCasesTest.php</span>
-                    <span className="text-slate-500 text-[10px]">100% absorption rules</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between">
-                    <span className="text-slate-400">smartshippingai/README.md</span>
-                    <span className="text-slate-500 text-[10px]">Documentation & setup</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Install steps */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1">
-                <span className="font-semibold text-white block">PrestaShop Installation Guide:</span>
-                <ol className="list-decimal list-inside space-y-0.5 text-[11px] text-slate-400">
-                  <li>In PrestaShop Back-Office, navigate to <strong>Modules &rarr; Module Manager</strong>.</li>
-                  <li>Click <strong>Upload a module</strong> in the top right.</li>
-                  <li>Drop the downloaded <code className="text-emerald-400 font-mono">smartshippingai-v1.0.0.zip</code> file.</li>
-                  <li>PrestaShop will automatically execute <code className="text-sky-300 font-mono">install.sql</code> and configure the carrier!</li>
-                </ol>
-              </div>
+                  {/* Instructions */}
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1">
+                    <span className="font-semibold text-white block">Railway & GitHub Deployment:</span>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Αποσυμπιέστε το αρχείο στον υπολογιστή σας, κάντε <code className="text-emerald-400 font-mono">git push</code> στο GitHub repository σας, και στο Railway συνδέστε το repo. Το Railway θα αναγνωρίσει αυτόματα το <code className="text-teal-300 font-mono">railway.json</code> και θα το τρέξει ζωντανά!
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300">Package Archive Name:</span>
+                      <span className="font-mono text-xs font-bold text-emerald-400">smartshippingai-v1.0.0.zip</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>Target Platform:</span>
+                      <span>PrestaShop 1.7.0.0 - 8.2.x</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>Installation Mode:</span>
+                      <span>Module Manager &rarr; Upload a module (.zip)</span>
+                    </div>
+                  </div>
+
+                  {/* Manifest List */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-semibold uppercase text-slate-400 block tracking-wider">
+                      Included Module Manifest (14 Files Verified):
+                    </span>
+                    <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/80 p-3 text-[11px] font-mono text-slate-300 divide-y divide-slate-900">
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-emerald-400">smartshippingai/smartshippingai.php</span>
+                        <span className="text-slate-500 text-[10px]">Carrier hooks & engine</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-emerald-400">smartshippingai/config.xml</span>
+                        <span className="text-slate-500 text-[10px]">Module descriptor</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-sky-400">smartshippingai/sql/install.sql</span>
+                        <span className="text-slate-500 text-[10px]">Database schema creation</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-purple-400">smartshippingai/controllers/admin/AdminSmartShippingAIController.php</span>
+                        <span className="text-slate-500 text-[10px]">HelperList & AJAX</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-indigo-400">smartshippingai/views/templates/hook/shopping_cart_footer.tpl</span>
+                        <span className="text-slate-500 text-[10px]">Front-office cart widget</span>
+                      </div>
+                      <div className="py-1 flex items-center justify-between">
+                        <span className="text-slate-400">smartshippingai/tests/Unit/SmartShippingShippingCostTest.php</span>
+                        <span className="text-slate-500 text-[10px]">PHPUnit absorption suite</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Install steps */}
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1">
+                    <span className="font-semibold text-white block">PrestaShop Installation Guide:</span>
+                    <ol className="list-decimal list-inside space-y-0.5 text-[11px] text-slate-400">
+                      <li>In PrestaShop Back-Office, navigate to <strong>Modules &rarr; Module Manager</strong>.</li>
+                      <li>Click <strong>Upload a module</strong> in the top right.</li>
+                      <li>Drop the downloaded <code className="text-emerald-400 font-mono">smartshippingai-v1.0.0.zip</code> file.</li>
+                    </ol>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Footer Actions */}
@@ -4259,15 +4388,27 @@ export const AdminControllerView: React.FC = () => {
                 Close
               </button>
 
-              <button
-                type="button"
-                onClick={handleDownloadModuleZip}
-                disabled={isExportingZip}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all flex items-center space-x-2 cursor-pointer disabled:opacity-50"
-              >
-                <Download className={`w-4 h-4 ${isExportingZip ? 'animate-bounce' : ''}`} />
-                <span>{isExportingZip ? 'Generating ZIP Archive...' : 'Download ZIP Package (.zip)'}</span>
-              </button>
+              {exportPackageType === 'full_app' ? (
+                <button
+                  type="button"
+                  onClick={handleDownloadFullAppZip}
+                  disabled={isExportingFullApp}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all flex items-center space-x-2 cursor-pointer disabled:opacity-50"
+                >
+                  <FolderDown className={`w-4 h-4 ${isExportingFullApp ? 'animate-bounce' : ''}`} />
+                  <span>{isExportingFullApp ? 'Generating Full Project ZIP...' : 'Download Full Web App (.zip)'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleDownloadModuleZip}
+                  disabled={isExportingZip}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Download className={`w-4 h-4 ${isExportingZip ? 'animate-bounce' : ''}`} />
+                  <span>{isExportingZip ? 'Generating Module ZIP...' : 'Download PrestaShop Module (.zip)'}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

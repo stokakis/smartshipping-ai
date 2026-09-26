@@ -1252,6 +1252,74 @@ Return a classification for each item with its id, id_class (1-4), confidence_sc
     }
   });
 
+  /**
+   * Export complete Full-Stack Web Application project ZIP package
+   * (React, Server, Dockerfile, Railway configs, Nixpacks, Documentation, Modules)
+   */
+  app.get('/api/app/export-full-project', async (req, res) => {
+    try {
+      const zip = new JSZip();
+      const projectRootDir = path.resolve(__dirname);
+
+      const IGNORED_DIRS = new Set([
+        'node_modules',
+        'dist',
+        '.git',
+        '.nixpacks',
+        '.cache',
+        '.tmp',
+      ]);
+
+      const IGNORED_FILES = new Set([
+        '.DS_Store',
+        'Thumbs.db',
+        'bun.lock',
+      ]);
+
+      async function addDirToZip(currentDir: string, zipFolder: JSZip) {
+        const entries = await fs.promises.readdir(currentDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (IGNORED_FILES.has(entry.name) || entry.name.endsWith('.log')) {
+            continue;
+          }
+
+          const fullPath = path.join(currentDir, entry.name);
+          if (entry.isDirectory()) {
+            if (IGNORED_DIRS.has(entry.name)) {
+              continue;
+            }
+            const subFolder = zipFolder.folder(entry.name);
+            if (subFolder) {
+              await addDirToZip(fullPath, subFolder);
+            }
+          } else if (entry.isFile()) {
+            const fileContent = await fs.promises.readFile(fullPath);
+            zipFolder.file(entry.name, fileContent);
+          }
+        }
+      }
+
+      await addDirToZip(projectRootDir, zip);
+
+      const buffer = await zip.generateAsync({
+        type: 'nodebuffer',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+      });
+
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename="smartshipping-ai-full-webapp.zip"');
+      res.setHeader('Content-Length', buffer.length);
+      return res.send(buffer);
+    } catch (err: any) {
+      console.error('Failed to generate full application project zip:', err);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to generate full web app zip: ' + (err?.message || 'Unknown error') 
+      });
+    }
+  });
+
   // In-memory store for Courier Vouchers and Live Webhook Event Stream
   interface CourierVoucher {
     id: string;

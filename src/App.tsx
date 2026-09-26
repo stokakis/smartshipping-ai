@@ -20,7 +20,8 @@ import {
   RefreshCw,
   ShoppingBag,
   ExternalLink,
-  SlidersHorizontal
+  SlidersHorizontal,
+  FolderDown
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { PhpUnitTestSuite, PHPUNIT_FILE_CONTENT, CLASS1_EDGE_PHP_SOURCE } from './components/PhpUnitTestSuite';
@@ -79,6 +80,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [copiedTests, setCopiedTests] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingFullApp, setDownloadingFullApp] = useState(false);
   const [testFilter, setTestFilter] = useState<'all' | 'absorption' | 'geo' | 'single'>('all');
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [testRunCompleted, setTestRunCompleted] = useState(true);
@@ -97,6 +99,31 @@ export default function App() {
     navigator.clipboard.writeText(SMARTSHIPPINGAI_PHP_CODE);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Download entire Full-Stack Web Application (Server + Client + Railway + Dockerfile)
+  const handleDownloadFullAppZip = async () => {
+    try {
+      setDownloadingFullApp(true);
+      const res = await fetch('/api/app/export-full-project');
+      if (!res.ok) {
+        throw new Error('Failed to generate full project archive');
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'smartshipping-ai-full-webapp.zip';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      console.error(err);
+      alert('Could not download full application: ' + (err?.message || 'Server error'));
+    } finally {
+      setDownloadingFullApp(false);
+    }
   };
 
   // Generate and download full PrestaShop module ZIP
@@ -324,14 +351,25 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2.5">
+            <button
+              onClick={handleDownloadFullAppZip}
+              disabled={downloadingFullApp}
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow-md shadow-emerald-600/25 transition-all cursor-pointer disabled:opacity-50"
+              title="Download entire Full-Stack Web Application project with Server, Dockerfile, Railway & Nixpacks configs, and Guides"
+            >
+              <FolderDown className={`w-4 h-4 ${downloadingFullApp ? 'animate-bounce' : ''}`} />
+              <span>{downloadingFullApp ? 'Generating App ZIP...' : 'Download Full App (ZIP)'}</span>
+            </button>
+
             <button
               onClick={handleDownloadZip}
               disabled={downloading}
-              className="inline-flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              title="Download only the installable PrestaShop Module (.zip)"
             >
-              <Download className="w-4 h-4" />
-              <span>{downloading ? 'Packing .ZIP...' : 'Download Module ZIP'}</span>
+              <Download className="w-4 h-4 text-indigo-400" />
+              <span>{downloading ? 'Packing Module...' : 'PrestaShop Module ZIP'}</span>
             </button>
           </div>
         </div>
