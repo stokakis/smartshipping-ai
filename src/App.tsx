@@ -21,12 +21,15 @@ import {
   ShoppingBag,
   ExternalLink,
   SlidersHorizontal,
-  FolderDown
+  FolderDown,
+  BookOpen,
+  HelpCircle
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { PhpUnitTestSuite, PHPUNIT_FILE_CONTENT, CLASS1_EDGE_PHP_SOURCE } from './components/PhpUnitTestSuite';
 import { AdminControllerView, CONTROLLER_PHP_SOURCE } from './components/AdminControllerView';
 import { AbsorptionRulesFlowchart } from './components/AbsorptionRulesFlowchart';
+import { UserGuideModal } from './components/UserGuideModal';
 
 interface VolumetricClass {
   id_class: number;
@@ -81,6 +84,7 @@ export default function App() {
   const [copiedTests, setCopiedTests] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadingFullApp, setDownloadingFullApp] = useState(false);
+  const [isUserGuideOpen, setIsUserGuideOpen] = useState(false);
   const [testFilter, setTestFilter] = useState<'all' | 'absorption' | 'geo' | 'single'>('all');
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [testRunCompleted, setTestRunCompleted] = useState(true);
@@ -352,6 +356,15 @@ export default function App() {
           </div>
 
           <div className="flex items-center space-x-2.5">
+            <button
+              onClick={() => setIsUserGuideOpen(true)}
+              className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-lg shadow-md shadow-amber-500/25 transition-all cursor-pointer hover:scale-[1.02]"
+              title="Αναλυτικός Οδηγός Χρήσης για Αρχάριους (Βήμα-Βήμα)"
+            >
+              <BookOpen className="w-4 h-4 text-slate-950" />
+              <span>📖 Πώς Λειτουργεί; (Οδηγός)</span>
+            </button>
+
             <button
               onClick={handleDownloadFullAppZip}
               disabled={downloadingFullApp}
@@ -1281,6 +1294,30 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Beginner Help Trigger Button */}
+      <div className="fixed bottom-5 right-5 z-40">
+        <button
+          onClick={() => setIsUserGuideOpen(true)}
+          className="flex items-center space-x-2 bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black px-4 py-2.5 rounded-full shadow-2xl shadow-amber-500/40 hover:scale-105 transition-all cursor-pointer border-2 border-slate-900 group"
+          title="Πώς να λειτουργήσετε την εφαρμογή (Οδηγός για Αρχάριους)"
+        >
+          <BookOpen className="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" />
+          <span className="text-xs">Πώς Λειτουργεί; (Οδηγός)</span>
+        </button>
+      </div>
+
+      {/* User Guide Modal for Beginners */}
+      <UserGuideModal
+        isOpen={isUserGuideOpen}
+        onClose={() => setIsUserGuideOpen(false)}
+        onNavigateTab={(tab) => {
+          setActiveTab(tab);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onDownloadFullApp={handleDownloadFullAppZip}
+        onDownloadModule={handleDownloadZip}
+      />
     </div>
   );
 }
